@@ -1,0 +1,17 @@
+name: Deploy (ArgoCD Sync)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ops/helm/**'
+      - 'ops/k8s/**'
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print changed manifests
+        run: git diff --name-only HEAD~1 HEAD | grep -E 'ops/(helm|k8s)/' || true
+      # Add your ArgoCD CLI auth & sync here when ready.
+      # e.g., argocd app sync <app-name> --grpc-web

@@ -1,0 +1,5 @@
+global:
+  repo: ${{ github.repository }}
+image:
+  tag: dev
+replicaCount: 1

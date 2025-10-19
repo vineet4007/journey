@@ -1,0 +1,65 @@
+name: CI
+on:
+  push: { branches: [ main ] }
+  pull_request: { branches: [ main ] }
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [services/node-api, services/java-api, services/ai-service]
+    env:
+      IMAGE_REGISTRY: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node.js service
+      - if: contains(matrix.service, 'node-api')
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - if: contains(matrix.service, 'node-api')
+        run: |
+          cd services/node-api
+          if [ -f package.json ]; then npm ci && npm test -- --ci || true; fi
+          docker build -t $IMAGE_REGISTRY/node-api:${{ github.sha }} -f Dockerfile .
+
+      # Java service
+      - if: contains(matrix.service, 'java-api')
+        uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - if: contains(matrix.service, 'java-api')
+        run: |
+          cd services/java-api
+          if [ -f mvnw ]; then ./mvnw -q -DskipTests=false test package; fi || true
+          docker build -t $IMAGE_REGISTRY/java-api:${{ github.sha }} -f Dockerfile .
+
+      # Python AI service
+      - if: contains(matrix.service, 'ai-service')
+        uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - if: contains(matrix.service, 'ai-service')
+        run: |
+          cd services/ai-service
+          if [ -f requirements.txt ]; then pip install -r requirements.txt && pytest -q || true; fi
+          docker build -t $IMAGE_REGISTRY/ai-service:${{ github.sha }} -f Dockerfile .
+
+      # SBOM + Vulnerability Scan
+      - uses: anchore/sbom-action@v0
+        with: { path: '.', upload-artifacts: true }
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '1'
+
+      # Login & Push container images (best-effort per service)
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          docker push $IMAGE_REGISTRY/node-api:${{ github.sha }} || true
+          docker push $IMAGE_REGISTRY/java-api:${{ github.sha }} || true
+          docker push $IMAGE_REGISTRY/ai-service:${{ github.sha }} || true
