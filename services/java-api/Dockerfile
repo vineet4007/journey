@@ -1,7 +1,6 @@
-FROM eclipse-temurin:17-jre as base
+FROM eclipse-temurin:25-jre
 WORKDIR /app
-# Expect app.jar to be produced by your build
-COPY target/*.jar /app/app.jar
+COPY target/java-api-0.1.0.jar /app/app.jar
 USER 10001
-EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["java","-jar","/app/app.jar"]
