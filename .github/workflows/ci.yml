@@ -1,4 +1,4 @@
-cat > .github/workflows/ci.yml <<'YAML'
+
 name: CI
 
 on:
