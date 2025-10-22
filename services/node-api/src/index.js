@@ -1,15 +1,39 @@
+
 import express from 'express';
 import pino from 'pino';
+import { initKafka, producer } from './kafka.js';
+import { startWorker } from './worker.js';
 
 const app = express();
 const log = pino();
+app.use(express.json());
 
-app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
-app.get('/', (req, res) => res.json({ service: 'node-api', ok: true }));
+app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
 
-const server = app.listen(process.env.PORT || 3000, () => {
-  log.info({ port: server.address().port }, 'node-api up');
+app.post('/enqueue', async (req, res) => {
+  try {
+    const payload = Object.keys(req.body || {}).length ? req.body : { t: Date.now() };
+    await producer.send({
+      topic: process.env.TOPIC_MAIN || 'jobs',
+      messages: [{ key: String(payload.t || Date.now()), value: JSON.stringify(payload) }],
+    });
+    log.info({ payload }, 'enqueued');
+    res.json({ enqueued: true });
+  } catch (err) {
+    log.error({ err: err.message }, 'enqueue failed');
+    res.status(500).json({ error: err.message });
+  }
 });
 
-process.on('SIGTERM', () => { server.close(() => process.exit(0)); });
-process.on('SIGINT', () => { server.close(() => process.exit(0)); });
+const port = process.env.PORT || 3000;
+app.listen(port, async () => {
+  log.info({ port }, 'node-api up');
+  try {
+    await initKafka();
+    await startWorker();
+  } catch (err) {
+    log.error({ err: err.message }, 'startup failed');
+    process.exit(1);
+  }
+});
+
