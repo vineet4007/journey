@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node -e 'console.log(\"ok\")'"
+    "test": "node -e 'console.log(\"ok\")'",
+    "dev": "KAFKAJS_NO_PARTITIONER_WARNING=1 node src/index.js"
   },
   "dependencies": {
     "express": "^4.21.2",
