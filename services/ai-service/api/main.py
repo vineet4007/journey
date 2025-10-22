@@ -1,3 +1,5 @@
+# fix main.py with proper indentation and endpoints
+# cat > services/ai-service/api/main.py <<'EOF'
 from fastapi import FastAPI, Request, Response
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 import time
@@ -25,7 +27,12 @@ async def metrics_middleware(request: Request, call_next):
 def healthz():
     return {"status": "ok"}
 
+@app.get("/")
+def root():
+    return {"service": "ai-service", "ok": True}
+
 @app.get("/metrics")
 def metrics():
     data = generate_latest()
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+# EOF
