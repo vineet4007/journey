@@ -1,3 +1,4 @@
+# single-stage Dockerfile, JRE 25, expose 8081 only
 # cat > services/java-api/Dockerfile <<'EOF'
 FROM eclipse-temurin:25-jre
 WORKDIR /app
