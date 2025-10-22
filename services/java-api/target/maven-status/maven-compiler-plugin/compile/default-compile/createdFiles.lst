@@ -1,2 +1,4 @@
-com/vineet/api/JavaApiApplication$Api.class
+com/vineet/api/config/SchedulerConfig.class
+com/vineet/api/web/HealthController.class
+com/vineet/api/jobs/BatchRunner.class
 com/vineet/api/JavaApiApplication.class
